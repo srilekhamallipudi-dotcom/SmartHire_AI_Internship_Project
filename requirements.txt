@@ -1,0 +1,9 @@
+streamlit
+PyPDF2
+pandas
+matplotlib
+nltk
+plotly
+scikit-learn
+fpdf
+yagmail
