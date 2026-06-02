@@ -1,4 +1,14 @@
 import streamlit as st
+
+if not st.session_state.get("logged_in", False):
+    st.switch_page("app.py")
+with st.sidebar:
+
+    if st.button("🚪 Logout"):
+
+        st.session_state.clear()
+
+        st.switch_page("app.py")
 import matplotlib.pyplot as plt
 
 # ================= PAGE CONFIG ================= #

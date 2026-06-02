@@ -1,5 +1,16 @@
 import streamlit as st
+
+if not st.session_state.get("logged_in", False):
+    st.switch_page("app.py")
+with st.sidebar:
+
+    if st.button("🚪 Logout"):
+
+        st.session_state.clear()
+
+        st.switch_page("app.py")
 from PyPDF2 import PdfReader
+from mongodb import resume_collection
 
 # ================= PAGE CONFIG ================= #
 
@@ -126,9 +137,20 @@ if uploaded_file is not None:
 
     # Resume Text
     st.session_state["resume_text"] = resume_text
+    st.session_state["resume_filename"] = uploaded_file.name
+
+    # Save Resume in MongoDB
+    resume_data = {
+        "filename": uploaded_file.name,
+        "resume_text": resume_text
+    }
+
+    resume_collection.insert_one(resume_data)
 
     # Original Resume File
     st.session_state["resume_file"] = uploaded_file
+
+    st.success("✅ Resume saved in MongoDB successfully")
 
     # ================= DISPLAY CONTENT ================= #
 
@@ -150,7 +172,7 @@ if uploaded_file is not None:
     # ================= SUCCESS MESSAGE ================= #
 
     st.success(
-        "🚀 Resume stored successfully for ATS Analysis and Recruiter Email System"
+        "🚀 Resume stored successfully for ATS Analysis, MongoDB Storage and Recruiter Email System"
     )
 
 else:

@@ -1,4 +1,17 @@
 import streamlit as st
+from mongodb import reports_collection
+
+if not st.session_state.get("logged_in", False):
+
+    st.switch_page("app.py")
+with st.sidebar:
+
+    if st.button("🚪 Logout"):
+
+        st.session_state.clear()
+
+        st.switch_page("app.py")
+from mongodb import resume_collection
 
 # ================= PAGE CONFIG ================= #
 
@@ -174,15 +187,48 @@ if resume_text:
     found_skills = len(detected_skills)
 
     ats_score = int((found_skills / total_skills) * 100)
+    user_email = st.session_state.get("user_email", "")
+    missing_skills = [skill for skill in skills if skill not in detected_skills]
+    import datetime
+       # ================= ROLE + CONFIDENCE (SIMPLE LOGIC) ================= #
+    if "python" in detected_skills and "machine learning" in detected_skills:
+        predicted_role = "Data / ML Engineer"
+        confidence = 85
+    elif "javascript" in detected_skills:
+        predicted_role = "Frontend Developer"
+        confidence = 75
+    else:
+        predicted_role = "General Developer"
+        confidence = 60
 
+    if not st.session_state.get("report_saved"):
+        reports_collection.insert_one({
+            "user_email": user_email,
+            "resume_name": st.session_state.get("resume_filename", "Unknown"),
+            "ats_score": ats_score,
+            "detected_skills": detected_skills,
+            "missing_skills": missing_skills,
+            "predicted_role": predicted_role,
+            "confidence": confidence,
+            "created_at": datetime.datetime.now()
+        })
+        st.session_state["report_saved"] = True
     # ================= MISSING SKILLS ================= #
 
-    missing_skills = []
+    
+    result = resume_collection.update_one(
+    {"resume_text": resume_text},
+    {
+        "$set": {
+            "ats_score": ats_score,
+            "detected_skills": detected_skills,
+            "missing_skills": missing_skills
+        }
+    }
+)
 
-    for skill in skills:
-
-        if skill not in detected_skills:
-            missing_skills.append(skill)
+    st.write("Matched:", result.matched_count)
+    st.write("Modified:", result.modified_count)
 
     # ================= ATS SCORE DISPLAY ================= #
 

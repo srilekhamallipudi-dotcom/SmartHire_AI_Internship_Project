@@ -1,4 +1,15 @@
 import streamlit as st
+from mongodb import reports_collection
+
+if not st.session_state.get("logged_in", False):
+    st.switch_page("app.py")
+with st.sidebar:
+
+    if st.button("🚪 Logout"):
+
+        st.session_state.clear()
+
+        st.switch_page("app.py")
 import pickle
 import re
 import nltk
@@ -179,7 +190,28 @@ if resume_text:
         max(model.predict_proba(transformed_resume)[0]) * 100,
         2
     )
+    # ================= SAVE REPORT IN MONGODB ================= #
+    st.write(st.session_state)
+    user_email = st.session_state.get("user_email", "Unknown")
+    resume_filename = st.session_state.get(
+    "resume_filename",
+    "Unknown Resume"
+    )
 
+    reports_collection.update_one(
+        {
+            "user_email": user_email},
+        {
+
+            "$set": {
+                "user_email": user_email,
+                "resume_name": resume_filename,
+                "predicted_role": prediction,
+                "confidence": confidence
+        }
+    },
+    upsert=True
+)
     # ================= RESULT ================= #
 
     st.markdown(
